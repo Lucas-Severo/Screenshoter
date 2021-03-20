@@ -3,13 +3,15 @@ package screenshoter;
 import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.GridLayout;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.awt.event.ActionListener;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
@@ -17,11 +19,10 @@ import javax.swing.SwingUtilities;
 public class ScreenshoterScreen {
 
     private final JFrame jWindow;
-    private final Screenshoter screenshoter;
     private Thread screenshoterThread;
+    private boolean screenShotFullWindow = false;
     
-    public ScreenshoterScreen() throws AWTException {
-        screenshoter = new Screenshoter(1);
+    public ScreenshoterScreen() {
         jWindow = new JFrame();
         jWindow.setBackground(new Color(0, 0, 0, 0));
         jWindow.setContentPane(new Pane());
@@ -39,24 +40,35 @@ public class ScreenshoterScreen {
             gridPainel.setLayout(new GridLayout(10, 1));
 
             JButton stopButton = new JButton("Parar");
+            JCheckBox fotoTelaInteiraCheckBox = new JCheckBox("Tirar da tela inteira");
+            JButton takeShotButton = new JButton("Capturar agora");
             stopButton.setEnabled(false);
             
-            JButton takeShotButton = new JButton("Capturar agora");
             takeShotButton.addActionListener((ActionEvent ae) -> {
                 takeShotButton.setEnabled(false);
                 stopButton.setEnabled(true);
+                fotoTelaInteiraCheckBox.setEnabled(false);
                 jWindow.setState(Frame.ICONIFIED);
                 executarScreenshoter();
+            });
+            
+            fotoTelaInteiraCheckBox.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    screenShotFullWindow = fotoTelaInteiraCheckBox.isSelected();
+                }
             });
             
             stopButton.addActionListener((ActionEvent ae) -> {
                 takeShotButton.setEnabled(true);
                 stopButton.setEnabled(false);
+                fotoTelaInteiraCheckBox.setEnabled(true);
                 pararScreenshoter();
             });
             
             gridPainel.add(takeShotButton);
             gridPainel.add(stopButton);
+            gridPainel.add(fotoTelaInteiraCheckBox);
 
             borderPainel.add(gridPainel, BorderLayout.SOUTH);
             add(borderPainel);
@@ -75,11 +87,7 @@ public class ScreenshoterScreen {
     public static void main(String[] args) {
        JFrame.setDefaultLookAndFeelDecorated(true);
        SwingUtilities.invokeLater(() ->  {
-           try {
-               new ScreenshoterScreen();
-           } catch (AWTException ex) {
-               Logger.getLogger(ScreenshoterScreen.class.getName()).log(Level.SEVERE, null, ex);
-           }
+            new ScreenshoterScreen();
        });
     }
     
@@ -88,6 +96,8 @@ public class ScreenshoterScreen {
             @Override
             public void run() {
                 try {
+                    Screenshoter screenshoter = obterScreenshoter();
+                    
                     screenshoter.continuosCapture();
                 } catch (InterruptedException interruptedException) {
                     System.out.println(interruptedException.getMessage());
@@ -101,5 +111,28 @@ public class ScreenshoterScreen {
     
     private void pararScreenshoter() {
         screenshoterThread.interrupt();
+    }
+    
+    private Screenshoter obterScreenshoter() throws AWTException {
+        if (!screenShotFullWindow) {
+            Point point = obterPosicao();
+            Dimension dimension = obterDimensao();
+
+            return new Screenshoter(1, point, dimension);
+        }
+        
+        return new Screenshoter(1);
+    }
+    
+    private Point obterPosicao() {
+        int x = jWindow.getX();
+        int y = jWindow.getY();
+        return new Point(x, y);
+    }
+    
+    private Dimension obterDimensao() {
+        int width = jWindow.getWidth();
+        int height = jWindow.getHeight();
+        return new Dimension(width, height);
     }
 }

@@ -1,6 +1,8 @@
 package screenshoter;
 
 import java.awt.AWTException;
+import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
@@ -20,8 +22,13 @@ public class Screenshoter {
         screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
     }
     
+    public Screenshoter(int time, Point point, Dimension dimension) throws AWTException {
+        this.time = time * 1000;
+        screenRect = new Rectangle(point, dimension);
+    }
+    
     public void capture() throws Exception {
-        String prefix = LocalDateTime.now().toString();
+        String prefix = LocalDateTime.now().toString().replaceAll("[.:]", "");
         File imageFile = new File("single-screen" + prefix + ".png");
         BufferedImage screenCapturer = new Robot().createScreenCapture(screenRect);
         ImageIO.write(screenCapturer, "png", imageFile);
